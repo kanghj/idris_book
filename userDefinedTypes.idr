@@ -43,23 +43,24 @@ insert x orig@(Node left val right) = case compare x val of
                                       EQ => orig
                                       GT => Node left val (insert x right)
 
-data PowerSource = Petrol | Pedal
+data PowerSource = Petrol | Pedal | Electric
 
 data Vehicle : PowerSource -> Type where
-  Bicycle : Vehicle Pedal
-  Car : (fuel : Nat) -> Vehicle Petrol
-  Bus : (fuel : Nat) -> Vehicle Petrol
+  Unicycle : Vehicle Pedal
+  Motorcycle : (fuel: Nat) -> Vehicle Petrol
+  Tram: (battery : Nat) -> Vehicle Electric
 
 
 wheels : Vehicle power -> Nat
-wheels  Bicycle = 2
-wheels (Car fuel) = 4
-wheels (Bus fuel) = 4
+
+wheels Unicycle = 1
+wheels (Motorcycle fuel) = 2
+wheels (Tram battery) = 6
 
 refuel : Vehicle Petrol -> Vehicle Petrol
-refuel (Car fuel) = Car 100
-refuel (Bus fuel) = Bus 200
-refuel Bicycle impossible
+refuel Unicycle impossible
+refuel (Motorcycle fuel) = Motorcycle 50
+refuel (Tram fuel) impossible
 
 
 append : Vect n elem -> Vect m elem -> Vect (n + m) elem
@@ -74,3 +75,14 @@ tryIndex : Integer -> Vect n a -> Maybe a
 tryIndex {n} i xs = case integerToFin i n of
                      Nothing => Nothing
                      (Just idx) => Just (index idx xs)
+
+vectTake : (n : Nat) -> Vect (n+m) a -> Vect n a
+vectTake Z (x :: xs) = []
+vectTake (S i) (x :: xs) = x :: vectTake (i) xs
+
+sumEntries : Num a => (pos : Integer) -> Vect n a -> Vect n a -> Maybe a
+sumEntries {n} pos xs ys = let validIdx = integerToFin pos n in
+                            case validIdx of
+                              Nothing => Nothing
+                              (Just idx) => Just (index idx xs + index idx ys)
+                              

@@ -10,7 +10,8 @@ addMatrix xs ys = zipWith addMatrixRow xs ys where
                     addMatrixRow (a :: as) (b :: bs) = (a + b) :: addMatrixRow as bs
 
 createEmpties : Vect n (Vect 0 elem)
-createEmpties = replicate _ []
+createEmpties {n = Z} = []
+createEmpties {n = (S k)} = [] :: createEmpties
 
 
 transpostHelper : (x : Vect n elem) -> (xsTrans : Vect n (Vect len elem)) -> Vect n (Vect (S len) elem)

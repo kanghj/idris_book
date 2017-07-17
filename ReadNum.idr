@@ -1,3 +1,7 @@
+module ReadNum
+
+public export
+
 readNumber : IO (Maybe Nat)
 readNumber = do
   input <- getLine
@@ -5,7 +9,7 @@ readNumber = do
     then pure (Just (cast input))
     else pure Nothing
 
-
+export
 readNumbers: IO (Maybe (Nat, Nat))
 readNumbers =
   do Just num1_ok <- readNumber | Nothing => pure Nothing

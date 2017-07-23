@@ -39,14 +39,47 @@ addToStore (MkData schema size items) newitem = MkData schema _ (addToData items
 
 
 data Command : Schema -> Type where
+              SetSchema : (newschema : Schema) -> Command schema
               Add : SchemaType schema -> Command schema
               Get : Integer -> Command schema
               -- | Size
               -- | Search
               Quit : Command schema
 
+parsePrefix : (schema : Schema) -> String -> Maybe (SchemaType schema, String)
+parsePrefix SString input = getQuoted (unpack input)
+  where
+    getQuoted : List Char -> Maybe (String, String)
+    getQuoted ('"' :: xs) =
+        case span (/= '"') xs of
+          (quoted, '"' :: rest) => Just (pack quoted, ltrim (pack rest))
+          _ => Nothing
+    getQuoted _ = Nothing
+parsePrefix SInt x = case span isDigit x of
+                        ("", rest) => Nothing
+                        (num, rest) => Just (cast num, ltrim rest)
+parsePrefix (schema1 .+. schema2) input =
+  case parsePrefix schema1 input of
+    Nothing => Nothing
+    (Just (l_val, input')) => case parsePrefix schema2 input' of
+      Nothing => Nothing
+      Just (r_val, input'') => Just ((l_val, r_val), input'')
+
+
+
+parseBySchema : (schema : Schema) -> String -> Maybe (SchemaType schema)
+parseBySchema schema rest = case parsePrefix schema rest of
+                                 Just (res, "") => Just res
+                                 {- parsePrefix scceeds but there's input remaining => more input than schema requires -}
+                                 Just _ => Nothing
+                                 Nothing => Nothing
+
+
+
 parseCommand : (schema: Schema) -> (cmd : String) -> (args : String) -> Maybe (Command schema)
-parseCommand schema "add" rest = Just (Add (?parseBySchema rest))
+parseCommand schema "add" rest = case parseBySchema schema rest of
+                                  Nothing => Nothing
+                                  Just restok => Just (Add restok)
 parseCommand schema "get" val = case all isDigit (unpack val) of
                           False => Nothing
                           True => Just (Get (cast val))
@@ -61,10 +94,15 @@ parse schema input =
               case span (/= ' ') input of
                 (cmd, args) => parseCommand schema cmd (ltrim args)
 
+display: (SchemaType schema) -> String
+display {schema = SString} x = show x
+display {schema = SInt} x = show x
+display {schema = (y .+. z)} (item1, item2) = (display item1) ++ ", " ++ (display item2)
+
 getEntry : (x : Integer) -> (store : DataStore) -> Maybe (String, DataStore)
 getEntry x store =  case integerToFin x (size store) of
                           Nothing => Just ("Out of Range\n", store)
-                          (Just pos) => Just (?diplay (index pos (items store)) ++ "\n", store)
+                          (Just pos) => Just (?display (index pos (items store)) ++ "\n", store)
 
 
 search: (x : String) -> (storeItems : Vect n String) -> (accumulator : String) -> String
@@ -78,7 +116,7 @@ search {n = (S len)} x (y :: ys) accumulator = case isInfixOf x y of
 processInput : DataStore -> String -> Maybe (String, DataStore)
 processInput store inp = case parse (schema store) inp of
                           Nothing => Just ("Invalid command\n", store)
-                          Just (Add x) => Just ("ID " ++ show (size store) ++ "\n", addToStore store  x)
+                          Just (Add x) => Just ("ID " ++ show (size store) ++ "\n", addToStore store x)
                           Just (Get x) => getEntry x store
                           -- Just (Size) => Just ("Size is " ++ show (size store) ++ "\n", store)
                           -- Just (Search x) => Just (search x (items store) "", store)

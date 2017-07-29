@@ -103,7 +103,6 @@ parseCommand schema "quit" "" = Just Quit
 parseCommand schema "schema" rest
         = do schemaok <- parseSchema (words rest)
              Just (SetSchema schemaok)
-
 parseCommand _ _ _ = Nothing
 
 

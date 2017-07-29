@@ -74,9 +74,23 @@ parseBySchema schema rest = case parsePrefix schema rest of
                                  Just _ => Nothing
                                  Nothing => Nothing
 
+parseSchema : List String -> Maybe Schema
+parseSchema ("String" :: xs) =
+  case xs of
+    [] => Just SString
+    _ => case parseSchema xs of
+           Nothing => Nothing
+           (Just xs_sch) => Just (SString .+. xs_sch)
+parseSchema ("Int" :: xs) =
+  case xs of
+    [] => Just SInt
+    _ => case parseSchema xs of
+          Nothing => Nothing
+          (Just xs_sch) => Just (SInt .+. xs_sch)
+parseSchema _ = Nothing
 
 
-parseCommand : (schema: Schema) -> (cmd : String) -> (args : String) -> Maybe (Command schema)
+parseCommand : (schema: Schema) -> String -> String -> Maybe (Command schema)
 parseCommand schema "add" rest = case parseBySchema schema rest of
                                   Nothing => Nothing
                                   Just restok => Just (Add restok)
@@ -86,6 +100,10 @@ parseCommand schema "get" val = case all isDigit (unpack val) of
 -- parseCommand "size" _ = Just Size
 -- parseCommand "search" str = Just (Search str)
 parseCommand schema "quit" "" = Just Quit
+parseCommand schema "schema" rest
+        = case parseSchema (words rest) of
+            Nothing => Nothing
+            Just schemaok => Just (SetSchema schemaok)
 parseCommand _ _ _ = Nothing
 
 
@@ -102,7 +120,7 @@ display {schema = (y .+. z)} (item1, item2) = (display item1) ++ ", " ++ (displa
 getEntry : (x : Integer) -> (store : DataStore) -> Maybe (String, DataStore)
 getEntry x store =  case integerToFin x (size store) of
                           Nothing => Just ("Out of Range\n", store)
-                          (Just pos) => Just (?display (index pos (items store)) ++ "\n", store)
+                          (Just pos) => Just (display (index pos (items store)) ++ "\n", store)
 
 
 search: (x : String) -> (storeItems : Vect n String) -> (accumulator : String) -> String
@@ -110,6 +128,11 @@ search {n = Z} x [] accumulator = accumulator
 search {n = (S len)} x (y :: ys) accumulator = case isInfixOf x y of
   False => search x ys accumulator
   True => search x ys accumulator ++ (show len) ++ " " ++ y ++ "\n"
+
+setSchema : (store : DataStore) -> Schema -> Maybe DataStore
+setSchema store schema = case size store of
+                          Z => Just (MkData schema _ [])
+                          S k => Nothing
 
 
 
@@ -120,6 +143,10 @@ processInput store inp = case parse (schema store) inp of
                           Just (Get x) => getEntry x store
                           -- Just (Size) => Just ("Size is " ++ show (size store) ++ "\n", store)
                           -- Just (Search x) => Just (search x (items store) "", store)
+                          Just (SetSchema schema') =>
+                            case setSchema store schema' of
+                              Nothing => Just ("Can't update schema\n", store)
+                              Just store' => Just ("Ok\n", store')
                           Just Quit => Nothing
 
 main : IO ()

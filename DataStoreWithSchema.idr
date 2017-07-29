@@ -101,9 +101,9 @@ parseCommand schema "get" val = case all isDigit (unpack val) of
 -- parseCommand "search" str = Just (Search str)
 parseCommand schema "quit" "" = Just Quit
 parseCommand schema "schema" rest
-        = case parseSchema (words rest) of
-            Nothing => Nothing
-            Just schemaok => Just (SetSchema schemaok)
+        = do schemaok <- parseSchema (words rest)
+             Just (SetSchema schemaok)
+
 parseCommand _ _ _ = Nothing
 
 

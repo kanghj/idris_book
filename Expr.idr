@@ -22,4 +22,15 @@ Neg ty => Neg (Expr ty) where
   negate x = 0 - x
   (-) = Sub
   abs = Abs
-  
+
+Show ty => Show (Expr ty) where
+  show x = matchOp x
+      where matchOp : (Expr ty) -> String
+            matchOp (Val y) = show y
+            matchOp (Add y z) = "(" ++ show y ++ " + " ++ show z ++ ")"
+            matchOp (Sub y z) = "(" ++ show y ++ " - " ++ show z ++ ")"
+            matchOp (Mul y z) = "(" ++ show y ++ " * " ++ show z ++ ")"
+            matchOp (Div y z) = "(" ++ show y ++ " / " ++ show z ++ ")"
+            matchOp (Abs y) = "|" ++ show y ++ "|"
+
+  showPrec = ?holeeee

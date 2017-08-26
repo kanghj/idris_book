@@ -34,3 +34,7 @@ Show ty => Show (Expr ty) where
             matchOp (Abs y) = "|" ++ show y ++ "|"
 
   showPrec = ?holeeee
+
+
+(Neg num, Integral num, Eq num) => Eq (Expr num) where
+  (==) a b = eval (a) == eval (b)

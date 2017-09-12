@@ -1,3 +1,4 @@
+
 data Expr num = Val num
   | Add (Expr num) (Expr num)
   | Sub (Expr num) (Expr num)
@@ -38,3 +39,7 @@ Show ty => Show (Expr ty) where
 
 (Neg num, Integral num, Eq num) => Eq (Expr num) where
   (==) a b = eval (a) == eval (b)
+
+(Neg num, Integral num) => Cast (Expr num) num where
+  cast from to = case (eval from) of
+                   case_val => ?holeeeeee

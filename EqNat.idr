@@ -18,6 +18,13 @@ checkEqNat (S k) (S j) = case checkEqNat k j of
 exactLength : (len : Nat) -> (input : Vect m a) -> Maybe (Vect len a)
 exactLength {m} len input = case checkEqNat m len of 
                                 Nothing => Nothing
-                                (Just eq_nat) => Just ?exactLength_rhs  
+                                (Just (Same len)) => Just input
 
 
+checkEqNat1 : (num1 : Nat) -> (num2 : Nat) -> Maybe (num1 = num2)
+checkEqNat1 Z Z = Just Refl
+checkEqNat1 Z (S k) = Nothing
+checkEqNat1 (S k) Z = Nothing
+checkEqNat1 (S k) (S j) = case checkEqNat1 k j of
+                                Nothing => Nothing
+                                Just prf => Just (cong prf)
